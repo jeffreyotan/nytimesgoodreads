@@ -160,6 +160,8 @@ app.get('/books/:bookID/details', async (req, res, next) => {
         console.error(`Unable to retrieve book details with ID: ${bookID}`);
         res.status(500).type('text/html');
         res.send('<h1>An Internal Server error occurred. Please try again.</h1>');
+    } finally {
+        conn.release();
     }
 });
 
