@@ -10,6 +10,7 @@ const morgan = require('morgan');
 const PORT = parseInt(process.argv[2]) || parseInt(process.env.PORT) || 3000;
 
 const APIKEY = process.env.APIKEY || "";
+const NYTBASEURL = 'https://api.nytimes.com/svc/books/v3/reviews.json';
 const QUERYLIMIT = parseInt(process.env.DB_QUERY_LIMIT) || 10;
 const row1 = ["A", "B", "C", "D", "E"];
 const row2 = ["F", "G", "H", "I", "J"];
@@ -137,7 +138,36 @@ app.get('/books/:bookID/details', async (req, res, next) => {
     } catch (error) {
         console.error(`Unable to retrieve book details with ID: ${bookID}`);
         res.status(500).type('text/html');
-        res.send('<h1>An Internal Server error occurred. Please try again.</h1>')
+        res.send('<h1>An Internal Server error occurred. Please try again.</h1>');
+    }
+});
+
+app.get('/books/:title/reviews', async (req, res, next) => {
+    const queryTitle = req.params['title'];
+    const queryUrl = withQuery(
+        NYTBASEURL, {
+            "api-key": APIKEY,
+            title: queryTitle
+        }
+    );
+
+    const results = await fetch(queryUrl);
+    try {
+        const reviews = await results.json();
+        console.info('==> NYT Query successful: ', reviews);
+        
+        res.format({
+            default: () => {
+                res.status(200).type('text/html');
+                res.render('bookreviews', { hasReviews: reviews.num_results > 0, title: queryTitle,
+                    review: reviews.results
+                });
+            }
+        });
+    } catch (error) {
+        console.error('==> Error in requesting reviews: ', error);
+        res.status(500).type('text/html');
+        res.send('<h1>An Internal Server error occurred. Please try again.</h1>');
     }
 });
 

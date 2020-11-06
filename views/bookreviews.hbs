@@ -1,0 +1,27 @@
+<div class="row mt-2">
+    <div class="col">
+        {{#if hasReviews}}
+            {{#each review}}
+                <h2>{{this.book_title}}</h2>
+                <p>by {{this.book_author}}</p>
+                <div class="row my-1">
+                    <div class="col">
+                        <p>Reviewer: {{this.byline}}</p>
+                        <p>Date: {{this.publication_dt}}</p>
+                        <p>{{{this.summary}}}</p>
+                        <p><a href={{this.url}}>Full Review</a></p>
+                    </div>
+                </div>
+            {{/each}}
+        {{else}}
+            <h2>No review was found for the title: {{title}}.</h2>
+        {{/if}}
+        <p></p>
+        <button class="btn btn-warning"><a href="/">Return Home</a></button>
+    </div>
+</div>
+<div class="row mt-2">
+    <div class="col">
+        <a href="https://developer.nytimes.com"><em>Data provided by The New York Times</em></a>
+    </div>
+</div>
