@@ -123,16 +123,35 @@ app.get('/books/:bookID/details', async (req, res, next) => {
         const results = await conn.query(SQL_QUERY_BOOK_DETAIL, [bookID]);
         console.info('==> Obtained book details: ', results[0]);
         const bookDetails = results[0][0];
+        const neatAuthors = bookDetails.authors.split("|");
         const neatGenres = bookDetails.genres.split("|");
         console.info('==> neatGenres produced are: ', neatGenres);
         
         res.format({
-            default: () => {
+            'text/html': () => {
                 res.status(200).type('text/html');
                 res.render('bookdetails', { imagesrc: bookDetails.image_url, pages: bookDetails.pages,
-                    rating: bookDetails.rating, genres: neatGenres, title: bookDetails.title,
-                    authors: bookDetails.authors, description: bookDetails.description, bookID
+                    rating: bookDetails.rating, genres: neatGenres.join(", "), title: bookDetails.title,
+                    authors: neatAuthors.join(", "), description: bookDetails.description, bookID
                 });
+            },
+            'application/json': () => {
+                const data = {
+                    bookId: bookID,
+                    title: bookDetails.title,
+                    authors: neatAuthors,
+                    summary: bookDetails.description,
+                    pages: bookDetails.pages,
+                    rating: parseFloat(bookDetails.rating),
+                    ratingCount: bookDetails.rating_count,
+                    genre: neatGenres
+                };
+                res.status(200).type('application/json');
+                res.json(data);
+            },
+            default: () => {
+                res.status(406).type('text/plain');
+                res.send('Requested content type is not acceptable. Please change.');
             }
         });
     } catch (error) {
