@@ -1,0 +1,28 @@
+<div class="row my-2">
+    <div class="col">
+        <h2 class="text-dark">Letter {{alphabet}}</h2>
+    </div>
+</div>
+<div class="row">
+    <div class="col">
+        <h4>Books starting with the letter {{alphabet}} are as follows:</h4>
+        <ul>
+            {{#each books}}
+                <li><a href="/books/{{this.book_id}}/details">{{this.title}}</a></li>
+            {{/each}}
+        </ul>
+        <form action="/books/{{alphabet}}" method="get">
+            {{#if hasPrev}}
+                <button type="submit" name="btnPressed" value="prev">Prev</button>
+            {{else}}
+                <button disabled="disabled" name="btnPressed" value="prev">Prev</button>
+            {{/if}}
+            {{#if hasNext}}
+                <button type="submit" name="btnPressed" value="next">Next</button>
+            {{else}}
+                <button disabled="disabled" name="btnPressed" value="next">next</button>
+            {{/if}}
+            <input type="hidden" name="offset" value="{{offset}}">
+        </form>
+    </div>
+</div>

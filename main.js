@@ -20,7 +20,9 @@ const row6 = ["Z"];
 const row7 = ["0", "1", "2", "3", "4"];
 const row8 = ["5", "6", "7", "8", "9"];
 
-const SQL_QUERY_BOOK_LIST = "select * from book2018 where title like '?%' order by title asc limit ?;";
+const SQL_QUERY_BOOK_LIST = "select * from book2018 where title like ? order by title asc limit ? offset ?";
+const SQL_QUERY_BOOK_COUNT = "select count(*) as numbooks from book2018 where title like ? order by title asc";
+const SQL_QUERY_BOOK_DETAIL = "select * from book2018 where book_id like ?";
 
 // create instance of the express server
 const app = express();
@@ -69,7 +71,9 @@ app.get('/', (req, res, next) => {
 
 app.get('/books/:bookLtr', async (req, res, next) => {
     const bookStartLtr = req.params['bookLtr'];
-    let currOffset = req.query['offset'];
+    let currOffset = parseInt(req.query['offset']) || 0;
+    let hasPrev = true;
+    let hasNext = true;
 
     if(req.query['btnPressed'] === 'prev') {
         currOffset = Math.max(0, currOffset - QUERYLIMIT);
@@ -77,6 +81,64 @@ app.get('/books/:bookLtr', async (req, res, next) => {
         currOffset += QUERYLIMIT;
     }
     console.info("==> New Current Offset: ", currOffset);
+
+    const conn = await pool.getConnection();
+
+    try {
+        const counts = await conn.query(SQL_QUERY_BOOK_COUNT, [bookStartLtr + "%"]);
+        console.info('==> Val of counts: ', counts[0]);
+        const results = await conn.query(SQL_QUERY_BOOK_LIST, [bookStartLtr + "%", QUERYLIMIT, currOffset]);
+        console.info('==> Val of results: ', results[0][0]);
+
+        if(currOffset === 0) {
+            hasPrev = false;
+        } else if ((currOffset + QUERYLIMIT) > counts[0][0].numbooks ) {
+            hasNext = false;
+        }
+        console.info(`==> Value of hasPrev is ${hasPrev} and hasNext is ${hasNext}`);
+
+        res.format({
+            default: () => {
+                res.status(200).type('text/html');
+                res.render('booklist', { alphabet: bookStartLtr, books: results[0], offset: currOffset, hasPrev, hasNext });
+            }
+        });
+    } catch (error) {
+        console.error("==> Error occurred while processing query:", error);
+        res.status(500).type('text/html');
+        res.send('<h1>Internal Server error occurred</h1>');
+    } finally {
+        conn.release();
+    }
+});
+
+app.get('/books/:bookID/details', async (req, res, next) => {
+    const bookID = req.params['bookID'];
+    console.info(`==> The bookID obtained is ${bookID}`);
+
+    const conn = await pool.getConnection();
+
+    try {
+        const results = await conn.query(SQL_QUERY_BOOK_DETAIL, [bookID]);
+        console.info('==> Obtained book details: ', results[0]);
+        const bookDetails = results[0][0];
+        const neatGenres = bookDetails.genres.split("|");
+        console.info('==> neatGenres produced are: ', neatGenres);
+        
+        res.format({
+            default: () => {
+                res.status(200).type('text/html');
+                res.render('bookdetails', { imagesrc: bookDetails.image_url, pages: bookDetails.pages,
+                    rating: bookDetails.rating, genres: neatGenres, title: bookDetails.title,
+                    authors: bookDetails.authors, description: bookDetails.description, bookID
+                });
+            }
+        });
+    } catch (error) {
+        console.error(`Unable to retrieve book details with ID: ${bookID}`);
+        res.status(500).type('text/html');
+        res.send('<h1>An Internal Server error occurred. Please try again.</h1>')
+    }
 });
 
 console.info(`==> APIKEY: ${APIKEY}`);
