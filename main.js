@@ -91,9 +91,10 @@ app.get('/books/:bookLtr', async (req, res, next) => {
         const results = await conn.query(SQL_QUERY_BOOK_LIST, [bookStartLtr + "%", QUERYLIMIT, currOffset]);
         console.info('==> Val of results: ', results[0][0]);
 
-        if(currOffset === 0) {
+        if((currOffset - QUERYLIMIT) < 0) {
             hasPrev = false;
-        } else if ((currOffset + QUERYLIMIT) > counts[0][0].numbooks ) {
+        }
+        if ((currOffset + QUERYLIMIT) > counts[0][0].numbooks ) {
             hasNext = false;
         }
         console.info(`==> Value of hasPrev is ${hasPrev} and hasNext is ${hasNext}`);
