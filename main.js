@@ -131,7 +131,8 @@ app.get('/books/:bookID/details', async (req, res, next) => {
             'text/html': () => {
                 res.status(200).type('text/html');
                 res.render('bookdetails', { imagesrc: bookDetails.image_url, pages: bookDetails.pages,
-                    rating: bookDetails.rating, genres: neatGenres.join(", "), title: bookDetails.title,
+                    rating: bookDetails.rating, ratingcount: bookDetails.rating_count,
+                    genres: neatGenres.join(", "), title: bookDetails.title,
                     authors: neatAuthors.join(", "), description: bookDetails.description, bookID
                 });
             },
